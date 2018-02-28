@@ -23,7 +23,9 @@
 #define EEPROM_Lehrjahr 15
 #define TasterFreischalten 2
 /*****************************************************************************/
-//Global Variablen
+//Global Variablen definieren
+// Eine Struktur eines Accountsanlegen
+// Für mehr Informationen gucken Sie in dem Dokument.
 struct index {
   byte ID[4];
   int AccountID;
@@ -31,13 +33,14 @@ struct index {
   boolean Rechte;
 };
 struct index Account;
-byte readCard[4];
-byte Accountzeiger;
+byte readCard[4]; // Die Eingelesene ID Nummer in 4 Blöcken
+byte Accountzeiger;	// Wie viele Accounts schon vergeben wurden sind
 int AccountID;
 byte inAktive;
 boolean Wiederkehr;
 byte Jahresanzeige_Global;
 /*****************************************************************************/
+// Objekte Anlegen
 LiquidCrystal_I2C lcd(0x20, 16, 2); // LC-Display Objekt erstellen und Konfigurieren 3F
 MFRC522 mfrc522(SS_PIN, RST_PIN);
 /***/
@@ -243,6 +246,9 @@ void Menu_Admin(){
           Lehrjahr_einstellen();
           break;
         case 5:
+          Master_backwords();
+          break;
+        case 6:
           Wiederkehr = true;
           break;
       }
@@ -250,7 +256,7 @@ void Menu_Admin(){
     if (Neuerstand != Alterstand && (Alterstand = Neuerstand))
     {
       Menuzeiger++;
-      if (Menuzeiger > 5)
+      if (Menuzeiger > 6)
       {
         Menuzeiger = 1;
       }
@@ -274,7 +280,10 @@ void Menu_Admin(){
           textausgabe("  Nutzer Anlegen", "-> Lehrjahr");
           break;
         case 5:
-          textausgabe("   Lehrjahr", "-> Abbrechen");
+          textausgabe("   Lehrjahr", "-> Master Del");
+          break;
+        case 6:
+          textausgabe("   Master Del", "-> Abbrechen");
           break;
       }
     }
@@ -447,7 +456,7 @@ boolean Lehrjahr_Auswahlen(){
     if (Neuerstand1 != Alterstand1 && (Alterstand1 = Neuerstand1))
     {
       Menuzeiger1++;
-      if (Menuzeiger1 > 5)
+      if (Menuzeiger1 > 6)
       {
         Menuzeiger1 = 1;
       }
@@ -521,7 +530,7 @@ void Lehrjahr_einstellen(){
 void Lehrjahr_Update(){
   for(int i = 16; i<Accountzeiger*7+16;i += 7)
   {
-    if(EEPROM.read(i+6)<(EEPROM.read(EEPROM_Lehrjahr)-3))
+    if(EEPROM.read(i+6)<(EEPROM.read(EEPROM_Lehrjahr)-4))
     {
       for(byte o = 0; o<7; o++){
         EEPROM.write(i+o,0);
@@ -536,6 +545,32 @@ void Lehrjahr_Update(){
       }
     }
   }
+}
+void Master_backwords(){
+  delay(2000);
+  textausgabe("Master erneuern ?", "JA          NEIN");
+  while(true){
+    if(inAktive == 10){
+        textausgabe("Abgebrochen", "wegen Zeit");
+        delay(1000);
+        textausgabe("   Lehrjahr", "-> Master Del");
+        return;
+      }
+    if(ActiveButtonRead(4))
+    {
+      textausgabe("Master", "Gelöscht");
+      delay(2000);
+      textausgabe("Das Geraet", "Ausschalten");
+      break;
+    }else if(ActiveButtonRead(5)){
+      textausgabe("Vorgang", "Abgebrochen");
+      delay(2000);
+      textausgabe("   Lehrjahr", "-> Master Del");
+      return; 
+    }
+  }  
+  EEPROM.write(1,0);
+  while(true){}
 }
 //Ausbilder
 void Menu_Ausbilder() {
@@ -720,3 +755,4 @@ boolean login(){
     return true;
   }
 }
+
